@@ -1,5 +1,6 @@
 import datetime
 import math
+import urllib2
 
 class maindriver(object):
     dates = [] 
@@ -8,8 +9,7 @@ class maindriver(object):
     variancecalcs = [] 
     annualvolprime = float()
     pi = 3.14159265358979
-    annualvolprimeimplied = float()
-    
+    annualvolprimeimplied = float()           
 
     @classmethod
     def OptionPrice(cls, spot, strike, NbExp, vol, rate, q, optionType):
@@ -30,20 +30,13 @@ class maindriver(object):
             else:
                 print "TESTTESTTESTTEST", long((math.max(spot - strike, 0)))
                 return float((math.max(strike - spot, 0)))
+                
         d1 = ((math.log(spot / strike)) + (rate - q + (vol * vol) / 2) * T) / (vol * math.sqrt(T))
-        # print "TESTTESTTESTTEST";
-        # print (Math.log(spot/strike));
-        # print vol*Math.sqrt(T);
-        # print "TESTTESTTESTTEST"+d1;
         d2 = d1 - vol * math.sqrt(T)
-        # print "TESTTESTTESTTEST2  "+d2;
         Nd1 = cls.cdnf(d1)
-        # print "TESTTESTTESTTEST Nd1  "+Nd1;
         Nd2 = cls.cdnf(d2)
-        # print "TESTTESTTESTTEST Nd2  "+Nd2;
         if optionType == "c":
             # call option
-            # print (long) (spot*Math.exp(-q*T)*Nd1-strike*Math.exp(-rate*T)*Nd2);
             return float((spot * math.exp(-q * T) * Nd1 - strike * math.exp(-rate * T) * Nd2))
         else:
             # put option
@@ -272,6 +265,9 @@ class maindriver(object):
 
     @classmethod
     def main(cls, args):
+        #while True:
+        #    stock = raw_input('Stock to pull: ')
+        #    cls.pullData(stock)
         daysToMaturity = cls.timeToMaturity(2014, 11, 22, 0, 1)
         #print daysToMaturity
         cls.daysToMaturityPrime2 = daysToMaturity
@@ -312,7 +308,7 @@ class maindriver(object):
         # print "SG's price of Put: $"+SgOptionPut;
         # print "TIMMMMMMMMMMMME"+daysToMaturityPrime2;
         impliedvol = cls.annualvolimplied(SgOption, 8.1)
-        print "SG's annual vol for Call: ", cls.annualvolprime
+        print "SG's historical annual vol for Call: ", cls.annualvolprime
         print "SG's implied annualvol for Call: ", impliedvol
 
 class MarketDate(object):    
