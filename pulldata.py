@@ -3,6 +3,14 @@ import datetime
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+try:
+    # py3
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    # py2
+    from urllib2 import Request, urlopen
+    from urllib import urlencode
 
 logreturns = []
 variancecalcs = [] 
@@ -11,11 +19,11 @@ annualvolprime1 = []
 pi = 3.14159265358979 
 
 daysToMaturityPrime = float()
-rate = float()
+rate = .004
 q = float()
 spot = float()
-strike = float()
-realOptionPrice = float()
+#strike = float()
+#realOptionPrice = float()
 
 impliedvols = []
 months = []
@@ -28,10 +36,41 @@ low = []
 close = []
 volume = []
 
+g_price = []
+g_bid = []
+g_ask = []
+g_mid = []
+g_open_int = []
+g_strike = []
+
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
 start = datetime.date(2014, 1, 1)
 end = datetime.date.today()
 
+def readFile():
+    f = open('file.txt', 'r')
+    lines = f.readlines()
+    f.close()
+    
+    for l in lines:
+        s = l.split()
+        g_price.append(float(s[0]))
+        g_bid.append(float(s[2]))
+        g_ask.append(float(s[3]))
+        g_open_int.append(float(s[5]))
+        g_strike.append(float(s[6]))
+        
+    i = 0
+    while i < len(g_bid):
+        mid = (g_ask[i] + g_bid[i]) / 2
+        g_mid.append(mid)
+        i += 1
+    
+    #for i in g_strike:
+    #    print 'strike', i
+    #for i in g_mid:
+    #    print 'mid', i
+        
 def makeUrl(stock, start, end):
     a = start
     b = end
@@ -39,6 +78,8 @@ def makeUrl(stock, start, end):
     return urlToVisit+dateUrl
 
 def pullData(stock):
+    get_quote(stock)
+    readFile()
     try: 
         print "Currently pulling", stock
         stockUrl = makeUrl(stock, start, end)
@@ -74,128 +115,50 @@ def pullData(stock):
                 adjclose.append(s[6])
     except Exception, e:
         print str(e), 'error'
-        
-    index = 0
-    adjclose_1 = [] 
-    adjclose_2 = []
-    adjclose_3 = []
-    adjclose_4 = []
-    adjclose_5 = []
-    adjclose_6 = []
-    adjclose_7 = []
-    adjclose_8 = []
-    adjclose_9 = []
-    adjclose_10 = []
-    adjclose_11 = []
-    adjclose_12 = []
-    
-    #sort adjclose data by months
-    while index < len(date):        
-        if date[index].month == 1:
-            adjclose_1.append(adjclose[index])
-        if date[index].month == 2:
-            adjclose_2.append(adjclose[index])
-        if date[index].month == 3:
-            adjclose_3.append(adjclose[index])
-        if date[index].month == 4:
-            adjclose_4.append(adjclose[index])
-        if date[index].month == 5:
-            adjclose_5.append(adjclose[index])
-        if date[index].month == 6:
-            adjclose_6.append(adjclose[index])
-        if date[index].month == 7:
-            adjclose_7.append(adjclose[index])
-        if date[index].month == 8:
-            adjclose_8.append(adjclose[index])
-        if date[index].month == 9:
-            adjclose_9.append(adjclose[index])
-        if date[index].month == 10:
-            adjclose_10.append(adjclose[index])
-        if date[index].month == 11:
-            adjclose_11.append(adjclose[index])
-        if date[index].month == 12:
-            adjclose_12.append(adjclose[index])
-        index += 1
-    
-    print '\n----------------------------Volatilites for options with', daysToMaturityPrime, 'days to maturity----------------------------'
-    if len(adjclose_1) > 0:
-        print '\nJanuary:'
-        months.append(1)
-        impliedVolByMonth(adjclose_1)
-    if len(adjclose_2) > 0:
-        months.append(2)
-        print '\nFeburary:'
-        impliedVolByMonth(adjclose_2)
-    if len(adjclose_3) > 0:
-        months.append(3)
-        print '\nMarch:'
-        impliedVolByMonth(adjclose_3)
-    if len(adjclose_4) > 0:
-        months.append(4)
-        print '\nApril:'
-        impliedVolByMonth(adjclose_4)
-    if len(adjclose_5) > 0:
-        months.append(5)
-        print '\nMay:'
-        impliedVolByMonth(adjclose_5)
-    if len(adjclose_6) > 0:
-        months.append(6)
-        print '\nJune:'
-        impliedVolByMonth(adjclose_6)
-    if len(adjclose_7) > 0:
-        months.append(7)
-        print '\nJuly:'
-        impliedVolByMonth(adjclose_7)
-    if len(adjclose_8) > 0:
-        print '\nAugust:'
-        months.append(8)
-        impliedVolByMonth(adjclose_8)
-    if len(adjclose_9) > 0:
-        months.append(9)
-        print '\nSeptember:'
-        impliedVolByMonth(adjclose_9)
-    if len(adjclose_10) > 0:
-        months.append(10)
-        print '\nOctober:'
-        impliedVolByMonth(adjclose_10)
-    if len(adjclose_11) > 0:
-        months.append(11)
-        print '\nNovember:'
-        impliedVolByMonth(adjclose_11)
-    if len(adjclose_12) > 0:
-        months.append(12)
-        print '\nDecember:'
-        impliedVolByMonth(adjclose_12)
-    
-    #for i in months, impliedvols:
-    #    print i
-        
-    #i = 0
-    #while i < len(impliedvols):
-    #    print 'before log', impliedvols[i]
-    #    impliedvols[i] = math.fabs(math.log(impliedvols[i]))
-    #    print 'after log', impliedvols[i]  
-    #    i += 1      
-    #    
-    #print ''
-    #j = 0
-    #while j < len(annualvolprime1):
-    #    print 'before log', annualvolprime1[j]
-    #    annualvolprime1[j] = math.fabs(math.log(annualvolprime1[j]))
-    #    print 'after log', annualvolprime1[j]  
-    #    j += 1 
-    
-    plt.grid(True)
-    plt.plot(months, impliedvols)
-    plt.plot(months, annualvolprime1)
-    plt.title('Volatilities vs. Time')
-    plt.xlabel('Months')
-    plt.ylabel('Volatilities')
-    #plt.yticks(np.arange(min(impliedvols), max(impliedvols+1), .001))
-    plt.legend(['Implied Vols', 'Historical Vols'], loc='upper left')
-    plt.show()
-    
 
+    
+    impliedVolWithStikes(adjclose, g_strike)
+        
+        
+def _request(symbol, stat):
+    url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
+    req = Request(url)
+    resp = urlopen(req)
+    content = resp.read().decode().strip()
+    return content
+    
+def get_quote(symbol):
+    ids = 'yl1'
+    values = _request(symbol, ids).split(',')
+    global q
+    global spot
+    q = float(values[0])
+    spot = float(values[1])
+    
+def impliedVolWithStikes(adjclose, strikes):
+    logreturn(adjclose)
+    variancecalc(logreturns)
+    annualvol(stdev(varianceaverage(variancecalcs)))
+    print "Spot:                                    ", spot
+    print "Historical annual volalitility for Call: ", annualvolprime
+    i = 0
+    while i < len(strikes):
+        
+        option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
+        print "Price of Call: $", option
+        
+        impliedvol = annualvolimplied(option, g_mid[i], strikes[i])
+    
+        #print "Average of adjclose:                     ", average
+        print "Strike:                                  ", strikes[i]
+        print "Historical annual volalitility for Call: ", annualvolprime
+        print "Implied annual volalitity for Call:      ", impliedvol
+        print ""
+        i += 1
+    
+    #greeks(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
+    
+            
 def timeToMaturity(year, month, day):
     maturityDate = datetime.date(year, month, day)
     difference = maturityDate - end
@@ -232,7 +195,50 @@ def OptionPrice(spot, strike, NbExp, vol, rate, q, optionType):
     else:
         # put option
         return float((-spot * math.exp(-q * T) * (1 - Nd1) + strike * math.exp(-rate * T) * (1 - Nd2)))
-            
+  
+def greeks(spot, strike, NbExp, vol, rate, q, optionType):
+    dS = float()
+    dv = float()
+    dr = float()
+    dt = float()
+    delta = float()
+    gamma = float()
+    vega = float()
+    theta = float()
+    rho = float()
+    dS = 0.01
+    # 0.01 point move in spot
+    dv = 0.0001
+    # 0.01% move in vol
+    dt = 1
+    # 1 day
+    dr = 0.0001
+    # 1bps move
+    if NbExp < 0:
+        # print "TESTTESTTESTTEST";
+        return 0
+    #x = float((cls.OptionPrice(spot + dS, strike, NbExp, vol, rate, q, optionType)))
+    #x2 = float(cls.OptionPrice(spot - dS, strike, NbExp, vol, rate, q, optionType))
+    # print x;
+    # print x2;
+    # print dS;
+    # print (x-x2)/(2*dS);
+    delta = float(((OptionPrice(spot + dS, strike, NbExp, vol, rate, q, optionType) - OptionPrice(spot - dS, strike, NbExp, vol, rate, q, optionType)) / (2 * dS)))
+    gamma = float(((OptionPrice(spot + dS, strike, NbExp, vol, rate, q, optionType) - 2 * OptionPrice(spot, strike, NbExp, vol, rate, q, optionType) + OptionPrice(spot - dS, strike, NbExp, vol, rate, q, optionType)) / (dS * dS)))
+    vega = float(((OptionPrice(spot, strike, NbExp, vol + dv, rate, q, optionType) - OptionPrice(spot, strike, NbExp, vol - dv, rate, q, optionType)) / (2 * dv) / 100))
+    rho = float(((OptionPrice(spot, strike, NbExp, vol, rate + dr, q, optionType) - OptionPrice(spot, strike, NbExp, vol, rate - dr, q, optionType)) / (2 * dr) / 1000))
+    if NbExp == 0:
+        # print "TESTTESTTESTTEST";
+        theta = 0
+    else:
+        theta = float(((OptionPrice(spot, strike, NbExp - dt, vol, rate, q, optionType) - OptionPrice(spot, strike, NbExp + dt, vol, rate, q, optionType)) / (2 * dt)))
+    print "delta: ", delta
+    print "gamma: ", gamma
+    print "vega:  ", vega
+    print "rho>:  ", rho
+    print "theta: ", theta
+    return 0
+                 
 def cdnf(x):
     neg = 1 if (x < 0) else 0
     if neg == 1:
@@ -254,7 +260,7 @@ def averagelog(logreturns):
     sum = 0
     counter = 0
     i = 0
-    while i < len(logreturns):
+    while i < len(logreturns) - 1:
         y = logreturns[i]
         sum += y
         counter += 1
@@ -264,9 +270,10 @@ def averagelog(logreturns):
     
 def variancecalc(logreturns):
     i = 0
+    avg = averagelog(logreturns)
     while i < len(logreturns) - 1:
         y = logreturns[i]
-        yprime = y - averagelog(logreturns)
+        yprime = y - avg
         global variancecalcs
         variancecalcs.append(math.pow(yprime, 2))
         i += 1
@@ -280,21 +287,19 @@ def varianceaverage(variancecalc):
         sum += y
         counter += 1
         i += 1
-    x = sum / counter
+    #counter should be n-1 to get an unbiased estimate
+    x = sum / (len(variancecalc) - 1)
     #print "**********************************"
     #print "VarAvrg:", x
     return x
 
 
 def stdev(varianceAvrg):
-    x = math.sqrt(varianceAvrg)
-    #print "Stdev:", x
-    return x
+    return math.sqrt(varianceAvrg)
 
 
 def annualvol(stdev):
     annualvol = math.sqrt(252) * stdev
-    #print "AnnualVol:", annualvol
     global annualvolprime 
     annualvolprime = annualvol
     #this should add historial vols by month in sequence
@@ -302,9 +307,9 @@ def annualvol(stdev):
     return annualvol
     
 def annualvol2(stdev):
-    return math.sqrt(252) * stdev
+    return math.sqrt(daysToMaturityPrime) * stdev
     
-def annualvolimplied(modelOption, realOption):
+def annualvolimplied(modelOption, realOption, strike):
         volimplied = stdev(varianceaverage(variancecalcs))
         annualvolimplied = 0
         real = realOption
@@ -316,6 +321,7 @@ def annualvolimplied(modelOption, realOption):
                 volimplied += 0.00001
                 model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, "c")
                 annualvolimplied = annualvol2(volimplied)
+                #print 'real > model', annualvolimplied
                 if annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
@@ -324,6 +330,7 @@ def annualvolimplied(modelOption, realOption):
                 volimplied -= 0.00001
                 model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, "c")
                 annualvolimplied = annualvol2(volimplied)
+                #print 'real < model', annualvolimplied
                 if annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
@@ -332,35 +339,13 @@ def annualvolimplied(modelOption, realOption):
         impliedvols.append(annualvolimplied)
         return annualvolimplied
         
-def impliedVolByMonth(adjclose):
-    #sum = 0
-    #count = 0
-    #for i in adjclose:
-    #    sum += float(i)
-    #    count += 1
-    #
-    #average = sum / count
-    
-    logreturn(adjclose)
-    variancecalc(logreturns)
-    annualvol(stdev(varianceaverage(variancecalcs)))
-    
-    option = OptionPrice(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
-    print "Price of Call: $", option
-    
-    impliedvol = annualvolimplied(option, realOptionPrice)
-    
-    #print "Average of adjclose:                     ", average
-    print "Historical annual volalitility for Call: ", annualvolprime
-    print "Implied annual volalitity for Call:      ", impliedvol
-        
 while True:
     stock = raw_input('Stock to pull: ')
-    spot = float(raw_input('Spot: '))
-    strike = float(raw_input('Strike: '))
-    realOptionPrice = float(raw_input('Real Option Price: '))
+    # spot = float(raw_input('Spot: '))
+    #strike = float(raw_input('Strike: '))
+    #realOptionPrice = float(raw_input('Real Option Price: '))
     daysToMaturityPrime = float(raw_input('Days to Maturity: '))
-    rate = float(raw_input('Risk-free Rate: '))
-    q = float(raw_input('Div/yield: '))
+    #rate = float(raw_input('Risk-free Rate: '))
+    # q = float(raw_input('Div/yield: '))
     
     pullData(stock)
