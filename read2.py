@@ -5,10 +5,14 @@ def googleQuote(ticker):
     url = 'http://www.google.com/finance/option_chain?q=%s&output=json'% ticker
     doc = urlopen(url)
     content = fix_json(doc.read())
-    print content
-    quote = json.loads(content[3:])
-    quote = float(quote[0][u'l'])
-    return quote
+    quote = json.loads(content)
+    json_string = json.dumps(content,sort_keys=True,indent=2)
+    #print json_string
+    parent = quote["expiry"]
+    for item in parent:
+        print item[0]
+    #quote = float(content[0][0])
+    return parent
     
 def fix_json(k):
     q=['cid','cp','s','cs','vol','expiry','underlying_id','underlying_price',
@@ -23,7 +27,7 @@ def fix_json(k):
  
     return k
 if __name__ == "__main__":
-    ticker = 'GOOG'
+    ticker = 'spy'
     print googleQuote(ticker)
     
     
