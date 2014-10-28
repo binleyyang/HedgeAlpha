@@ -36,12 +36,17 @@ low = []
 close = []
 volume = []
 
-g_price = []
-g_bid = []
-g_ask = []
-g_mid = []
-g_open_int = []
+g_price_call = []
+g_bid_call = []
+g_ask_call = []
+g_mid_call = []
+g_open_int_call = []
 g_strike = []
+g_price_put = []
+g_bid_put = []
+g_ask_put = []
+g_mid_put =[]
+g_open_int_put = []
 
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
 start = datetime.date(2014, 9, 1)
@@ -54,16 +59,25 @@ def readFile():
     
     for l in lines:
         s = l.split()
-        g_price.append(float(s[0]))
-        g_bid.append(float(s[2]))
-        g_ask.append(float(s[3]))
-        g_open_int.append(float(s[5]))
+        g_price_call.append(float(s[0]))
+        g_bid_call.append(float(s[2]))
+        g_ask_call.append(float(s[3]))
+        g_open_int_call.append(float(s[5]))
         g_strike.append(float(s[6]))
+        g_price_put.append(float(s[7]))
+        g_bid_put.append(float(s[9]))
+        g_ask_put.append(float(s[10]))
+        g_open_int_put.append(float(s[12]))
         
     i = 0
-    while i < len(g_bid):
-        mid = (g_ask[i] + g_bid[i]) / 2
-        g_mid.append(mid)
+    while i < len(g_bid_call):
+        mid = (g_ask_call[i] + g_bid_call[i]) / 2
+        g_mid_call.append(mid)
+        i += 1
+    
+    while i < len(g_bid_put):
+        mid = (g_ask_put[i] + g_bid_call[i]) / 2
+        g_mid_put.append(mid)
         i += 1
     
     #for i in g_strike:
@@ -132,7 +146,11 @@ def get_quote(symbol):
     values = _request(symbol, ids).split(',')
     global q
     global spot
+<<<<<<< HEAD
     q = float(values[0]) / 100 
+=======
+    q = float(values[0])/100
+>>>>>>> 8dcd8504937c960897241acb29b5367f17994278
     spot = float(values[1])
     
 def impliedVolWithStikes(adjclose, strikes):
@@ -141,6 +159,7 @@ def impliedVolWithStikes(adjclose, strikes):
     annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime
+<<<<<<< HEAD
     
     
     i = 0;
@@ -158,12 +177,21 @@ def impliedVolWithStikes(adjclose, strikes):
         print ""
         i += 1
     
+=======
+    print "\n\n\n"
+    
+    i = 0
+>>>>>>> 8dcd8504937c960897241acb29b5367f17994278
     while i < len(strikes):
-        
         option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
         print "Price of Call: $", option
+        print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
         
+<<<<<<< HEAD
         impliedvol = annualvolimplied(option, g_mid[i], strikes[i], "c")
+=======
+        impliedvol = annualvolimplied(option, g_mid_call[i], strikes[i], "c")
+>>>>>>> 8dcd8504937c960897241acb29b5367f17994278
     
         #print "Average of adjclose:                     ", average
         print "Strike:                                  ", strikes[i]
@@ -171,7 +199,16 @@ def impliedVolWithStikes(adjclose, strikes):
         print "Implied annual volalitity for Call:      ", impliedvol
         print ""
         i += 1
+<<<<<<< HEAD
 
+=======
+    plt.plot(strikes, impliedvols)
+    plt.show()
+    
+    
+    
+    
+>>>>>>> 8dcd8504937c960897241acb29b5367f17994278
     #greeks(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
     plt.plot(strikes, impliedvols)
     plt.show()
