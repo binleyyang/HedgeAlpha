@@ -44,7 +44,7 @@ g_open_int = []
 g_strike = []
 
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
-start = datetime.date(2014, 1, 1)
+start = datetime.date(2014, 9, 1)
 end = datetime.date.today()
 
 def readFile():
@@ -132,7 +132,7 @@ def get_quote(symbol):
     values = _request(symbol, ids).split(',')
     global q
     global spot
-    q = float(values[0])
+    q = float(values[0]) / 100 
     spot = float(values[1])
     
 def impliedVolWithStikes(adjclose, strikes):
@@ -141,13 +141,15 @@ def impliedVolWithStikes(adjclose, strikes):
     annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime
-    i = 0
-    while i < len(strikes):
+    
+    
+    i = 0;
+    while i < len(strikes)/2:
         
-        option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
-        print "Price of Call: $", option
+        option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
+        print "Price of Put: $", option
         
-        impliedvol = annualvolimplied(option, g_mid[i], strikes[i])
+        impliedvol = annualvolimplied(option, g_mid[i], strikes[i], "p")
     
         #print "Average of adjclose:                     ", average
         print "Strike:                                  ", strikes[i]
@@ -156,8 +158,23 @@ def impliedVolWithStikes(adjclose, strikes):
         print ""
         i += 1
     
-    #greeks(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
+    while i < len(strikes):
+        
+        option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
+        print "Price of Call: $", option
+        
+        impliedvol = annualvolimplied(option, g_mid[i], strikes[i], "c")
     
+        #print "Average of adjclose:                     ", average
+        print "Strike:                                  ", strikes[i]
+        print "Historical annual volalitility for Call: ", annualvolprime
+        print "Implied annual volalitity for Call:      ", impliedvol
+        print ""
+        i += 1
+
+    #greeks(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
+    plt.plot(strikes, impliedvols)
+    plt.show()
             
 def timeToMaturity(year, month, day):
     maturityDate = datetime.date(year, month, day)
@@ -309,7 +326,7 @@ def annualvol(stdev):
 def annualvol2(stdev):
     return math.sqrt(daysToMaturityPrime) * stdev
     
-def annualvolimplied(modelOption, realOption, strike):
+def annualvolimplied(modelOption, realOption, strike, optionType):
         volimplied = stdev(varianceaverage(variancecalcs))
         annualvolimplied = 0
         real = realOption
@@ -319,7 +336,7 @@ def annualvolimplied(modelOption, realOption, strike):
         elif real > model:
             while (real > model):
                 volimplied += 0.00001
-                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, "c")
+                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
                 annualvolimplied = annualvol2(volimplied)
                 #print 'real > model', annualvolimplied
                 if annualvolimplied < 0:
@@ -328,7 +345,7 @@ def annualvolimplied(modelOption, realOption, strike):
         else:
             while (real < model):
                 volimplied -= 0.00001
-                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, "c")
+                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
                 annualvolimplied = annualvol2(volimplied)
                 #print 'real < model', annualvolimplied
                 if annualvolimplied < 0:

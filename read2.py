@@ -4,15 +4,22 @@ import json
 def googleQuote(ticker):
     url = 'http://www.google.com/finance/option_chain?q=%s&output=json'% ticker
     doc = urlopen(url)
-    content = fix_json(doc.read())
-    quote = json.loads(content)
-    json_string = json.dumps(content,sort_keys=True,indent=2)
-    #print json_string
-    parent = quote["expiry"]
-    for item in parent:
-        print item[0]
-    #quote = float(content[0][0])
-    return parent
+    content = doc.read()
+    a = fix_json(content)
+    #print a
+    quote = json.loads(a)
+    print "\n=============================GIVE ME SOME SPACE===============================\n"
+    #print quote
+    
+    puts = quote['puts']
+    calls = quote['calls']
+    print "PUTS:      ", puts
+    print "CALLS:     ", calls
+    
+    for b in puts:
+        print b['strike']
+        
+    return quote
     
 def fix_json(k):
     q=['cid','cp','s','cs','vol','expiry','underlying_id','underlying_price',
@@ -28,6 +35,7 @@ def fix_json(k):
     return k
 if __name__ == "__main__":
     ticker = 'spy'
-    print googleQuote(ticker)
+    googleQuote(ticker)
+    #print googleQuote(ticker)
     
     
