@@ -3,6 +3,10 @@ import datetime
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+
+from urllib import urlopen
+import json
+
 try:
     # py3
     from urllib.request import Request, urlopen
@@ -25,7 +29,8 @@ spot = float()
 #strike = float()
 #realOptionPrice = float()
 
-impliedvols = []
+puts_impliedvols = []
+calls_impliedvols = []
 months = []
 
 adjclose = [] 
@@ -49,42 +54,99 @@ g_mid_put =[]
 g_open_int_put = []
 
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
-start = datetime.date(2014, 9, 1)
+# Y, M, D
+start = datetime.date(2014, 9, 10)
 end = datetime.date.today()
+        
+        
+def googleQuote(ticker):
+    url = 'http://www.google.com/finance/option_chain?q=%s&output=json'% ticker
+    doc = urlopen(url)
+    content = doc.read()
+    a = fix_json(content)
+    #print a
+    quote = json.loads(a)
+    print "\n=============================GIVE ME SOME SPACE===============================\n"
+    #print quote
+    
+    puts = quote['puts']
+    calls = quote['calls']
+    print "PUTS:      ", puts
+    print "CALLS:     ", calls
+    
+    for c in calls:
+        if c['b'] == '-' or c['a'] == '-':
+            pass
+        else:
+            g_bid_call.append(float(c['b']))
+            g_ask_call.append(float(c['a']))
+            g_strike.append(float(c['strike']))
+            bid = float(c['b'])
+            ask = float(c['a'])
+            mid = (bid + ask) / 2
+            g_mid_call.append(mid)
+    for p in puts:
+        if c['b'] == '-' or b['a'] == '-':
+            pass
+        else:
+            g_bid_put.append(float(p['b']))
+            g_ask_put.append(float(p['a']))
+            bid = float(p['b'])
+            ask = float(p['a'])
+            mid = (bid + ask) / 2
+            g_mid_put.append(mid)
 
-def readFile():
-    f = open('file.txt', 'r')
-    lines = f.readlines()
-    f.close()
+    return quote
+
+def fix_json(k):
+    q=['cid','cp','s','cs','vol','expiry','underlying_id','underlying_price',
+     'p','c','oi','e','b','strike','a','name','puts','calls','expirations',
+     'y','m','d']
+ 
+    for i in q:
+        try:    
+            k=k.replace('{%s:'%i,'{"%s":'%i)
+            k=k.replace(',%s:'%i,',"%s":'%i)
+        except: pass
+ 
+    return k
+
+# Need to convert to use JSon.
+# def readFile():
+#     f = open('file.txt', 'r')
+#     lines = f.readlines()
+#     f.close()
     
-    for l in lines:
-        s = l.split()
-        g_price_call.append(float(s[0]))
-        g_bid_call.append(float(s[2]))
-        g_ask_call.append(float(s[3]))
-        g_open_int_call.append(float(s[5]))
-        g_strike.append(float(s[6]))
-        g_price_put.append(float(s[7]))
-        g_bid_put.append(float(s[9]))
-        g_ask_put.append(float(s[10]))
-        g_open_int_put.append(float(s[12]))
+#     for l in lines:
+#         s = l.split()
+#         g_price_call.append(float(s[0]))
+#         g_bid_call.append(float(s[2]))
+#         g_ask_call.append(float(s[3]))
+#         g_open_int_call.append(float(s[5]))
+#         g_strike.append(float(s[6]))
         
-    i = 0
-    while i < len(g_bid_call):
-        mid = (g_ask_call[i] + g_bid_call[i]) / 2
-        g_mid_call.append(mid)
-        i += 1
-    
-    while i < len(g_bid_put):
-        mid = (g_ask_put[i] + g_bid_call[i]) / 2
-        g_mid_put.append(mid)
-        i += 1
-    
-    #for i in g_strike:
-    #    print 'strike', i
-    #for i in g_mid:
-    #    print 'mid', i
+#         #s
+#         #g_price_put.append(float(s[7]))
+#         #g_bid_put.append(float(s[9]))
+#         #g_ask_put.append(float(s[10]))
+#         #g_open_int_put.append(float(s[12]))
         
+#     i = 0
+#     while i < len(g_bid_call):
+#         mid = (g_ask_call[i] + g_bid_call[i]) / 2
+#         g_mid_call.append(mid)
+#         i += 1
+    
+#     while i < len(g_bid_put):
+#         mid = (g_ask_put[i] + g_bid_call[i]) / 2
+#         g_mid_put.append(mid)
+#         i += 1
+
+#for i in g_strike:
+#    print 'strike', i
+#for i in g_mid:
+#    print 'mid', i
+    
 def makeUrl(stock, start, end):
     a = start
     b = end
@@ -93,7 +155,7 @@ def makeUrl(stock, start, end):
 
 def pullData(stock):
     get_quote(stock)
-    readFile()
+    googleQuote(stock)
     try: 
         print "Currently pulling", stock
         stockUrl = makeUrl(stock, start, end)
@@ -146,11 +208,8 @@ def get_quote(symbol):
     values = _request(symbol, ids).split(',')
     global q
     global spot
-<<<<<<< HEAD
+
     q = float(values[0]) / 100 
-=======
-    q = float(values[0])/100
->>>>>>> 8dcd8504937c960897241acb29b5367f17994278
     spot = float(values[1])
     
 def impliedVolWithStikes(adjclose, strikes):
@@ -158,40 +217,29 @@ def impliedVolWithStikes(adjclose, strikes):
     variancecalc(logreturns)
     annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
-    print "Historical annual volalitility for Call: ", annualvolprime
-<<<<<<< HEAD
+    print "Historical annual volalitility for Call: ", annualvolprime    
+    # i = 0;
+    # while i < len(strikes)/2:
+        
+    #     option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
+        
+    #     impliedvol = calls_annualvolimplied(option, g_mid_call[i], strikes[i], "p")
     
-    
+    #     #print "Average of adjclose:                     ", average
+    #     print "Strike:                                  ", strikes[i]
+    #     print "Historical annual volalitility for Call: ", annualvolprime
+    #     print "Implied annual volalitity for Call:      ", impliedvol
+    #     print ""
+    #     i += 1
     i = 0;
-    while i < len(strikes)/2:
-        
-        option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
-        print "Price of Put: $", option
-        
-        impliedvol = annualvolimplied(option, g_mid[i], strikes[i], "p")
-    
-        #print "Average of adjclose:                     ", average
-        print "Strike:                                  ", strikes[i]
-        print "Historical annual volalitility for Call: ", annualvolprime
-        print "Implied annual volalitity for Call:      ", impliedvol
-        print ""
-        i += 1
-    
-=======
-    print "\n\n\n"
-    
-    i = 0
->>>>>>> 8dcd8504937c960897241acb29b5367f17994278
+
     while i < len(strikes):
         option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
-        print "Price of Call: $", option
+        print "Theoretical of Call: $", option
+        print "Market Price of Call: $", g_mid_call[i]
         print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
         
-<<<<<<< HEAD
-        impliedvol = annualvolimplied(option, g_mid[i], strikes[i], "c")
-=======
-        impliedvol = annualvolimplied(option, g_mid_call[i], strikes[i], "c")
->>>>>>> 8dcd8504937c960897241acb29b5367f17994278
+        impliedvol = calls_annualvolimplied(option, g_mid_call[i], strikes[i], "c")
     
         #print "Average of adjclose:                     ", average
         print "Strike:                                  ", strikes[i]
@@ -199,19 +247,12 @@ def impliedVolWithStikes(adjclose, strikes):
         print "Implied annual volalitity for Call:      ", impliedvol
         print ""
         i += 1
-<<<<<<< HEAD
 
-=======
-    plt.plot(strikes, impliedvols)
+    plt.plot(strikes, calls_impliedvols)
+    plt.ylabel("Implied Market Volatility")
+    plt.xlabel("Strike")
     plt.show()
-    
-    
-    
-    
->>>>>>> 8dcd8504937c960897241acb29b5367f17994278
-    #greeks(spot, strike, daysToMaturityPrime, annualvolprime, rate, q, "c")
-    plt.plot(strikes, impliedvols)
-    plt.show()
+
             
 def timeToMaturity(year, month, day):
     maturityDate = datetime.date(year, month, day)
@@ -363,36 +404,66 @@ def annualvol(stdev):
 def annualvol2(stdev):
     return math.sqrt(daysToMaturityPrime) * stdev
     
-def annualvolimplied(modelOption, realOption, strike, optionType):
+def calls_annualvolimplied(modelOption, realOption, strike, optionType):
         volimplied = stdev(varianceaverage(variancecalcs))
-        annualvolimplied = 0
+        calls_annualvolimplied = 0
         real = realOption
         model = modelOption
         if real == model:
-            annualvolimplied = annualvol2(volimplied)
+            calls_annualvolimplied = annualvol2(volimplied)
         elif real > model:
             while (real > model):
                 volimplied += 0.00001
                 model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
-                annualvolimplied = annualvol2(volimplied)
-                #print 'real > model', annualvolimplied
-                if annualvolimplied < 0:
+                calls_annualvolimplied = annualvol2(volimplied)
+                #print 'real > model', calls_annualvolimplied
+                if calls_annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
         else:
             while (real < model):
                 volimplied -= 0.00001
                 model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
-                annualvolimplied = annualvol2(volimplied)
-                #print 'real < model', annualvolimplied
-                if annualvolimplied < 0:
+                calls_annualvolimplied = annualvol2(volimplied)
+                #print 'real < model', calls_annualvolimplied
+                if calls_annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
         
         # this should add implied vols by month in sequence        
-        impliedvols.append(annualvolimplied)
-        return annualvolimplied
+        calls_impliedvols.append(calls_annualvolimplied)
+        return calls_annualvolimplied
+
+def puts_annualvolimplied(modelOption, realOption, strike, optionType):
+        volimplied = stdev(varianceaverage(variancecalcs))
+        calls_annualvolimplied = 0
+        real = realOption
+        model = modelOption
+        if real == model:
+            calls_annualvolimplied = annualvol2(volimplied)
+        elif real > model:
+            while (real > model):
+                volimplied += 0.00001
+                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
+                calls_annualvolimplied = annualvol2(volimplied)
+                #print 'real > model', calls_annualvolimplied
+                if calls_annualvolimplied < 0:
+                    print 'ERROR: OUT OF THE MONEY'
+                    break
+        else:
+            while (real < model):
+                volimplied -= 0.00001
+                model = OptionPrice(spot, strike, daysToMaturityPrime, annualvol2(volimplied), rate, q, optionType)
+                calls_annualvolimplied = annualvol2(volimplied)
+                #print 'real < model', calls_annualvolimplied
+                if calls_annualvolimplied < 0:
+                    print 'ERROR: OUT OF THE MONEY'
+                    break
         
+        # this should add implied vols by month in sequence        
+        puts_impliedvols.append(calls_annualvolimplied)
+        return calls_annualvolimplied
+
 while True:
     stock = raw_input('Stock to pull: ')
     # spot = float(raw_input('Spot: '))
