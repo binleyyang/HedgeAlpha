@@ -159,7 +159,7 @@ def pullData(stock):
         print str(e), 'error'
 
     impliedVolWithStikes(adjclose, g_strike_call, 'c')
-    impliedVolWithStikes(adjclose, g_strike_call, 'p')
+    impliedVolWithStikes(adjclose, g_strike_put, 'p')
         
 def _request(symbol, stat):
     url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
@@ -211,7 +211,7 @@ def impliedVolWithStikes(adjclose, strikes, type):
             print "Implied annual volalitity for Call:      ", impliedvol
             print ""
             i += 1
-    # PLOTING stops running code comented for now 
+
     # if(type == 'c'):
     #     plt.plot(strikes, calls_impliedvols)
     #     plt.ylabel("Implied Option Volatility")
@@ -221,6 +221,7 @@ def impliedVolWithStikes(adjclose, strikes, type):
 
     i = 0;
     if(type == 'p'):
+        print "GIVE ME SOME PUT SPACE"
         while i < len(strikes):
             option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
             print "Theoretical of Put: $", option
@@ -234,13 +235,15 @@ def impliedVolWithStikes(adjclose, strikes, type):
             print "Implied annual volalitity for Put:      ", impliedvol
             print ""
             i += 1
+    if(type == 'p'):
+        strikes.pop(0)
+        puts_impliedvols.pop(0)
+        plt.plot(strikes, puts_impliedvols)
+        plt.ylabel("Implied Option Volatility")
+        plt.xlabel("Strike")
+        plt.title('Verticle IVol Skew', color='#000000')
+        plt.show()
     return
-    # if(type == 'p'):
-    #     plt.plot(strikes, calls_impliedvols)
-    #     plt.ylabel("Implied Option Volatility")
-    #     plt.xlabel("Strike")
-    #     plt.title('Verticle IVol Skew', color='#000000')
-    #     plt.show()
 
             
 def timeToMaturity(year, month, day):
@@ -418,8 +421,7 @@ def calls_annualvolimplied(modelOption, realOption, strike, optionType):
                 if calls_annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
-        
-        # this should add implied vols by month in sequence        
+              
         calls_impliedvols.append(calls_annualvolimplied)
         return calls_annualvolimplied
 
@@ -448,8 +450,7 @@ def puts_annualvolimplied(modelOption, realOption, strike, optionType):
                 if puts_annualvolimplied < 0:
                     print 'ERROR: OUT OF THE MONEY'
                     break
-        
-        # this should add implied vols by month in sequence        
+             
         puts_impliedvols.append(puts_annualvolimplied)
         return puts_annualvolimplied
 
