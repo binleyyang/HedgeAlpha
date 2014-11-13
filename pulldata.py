@@ -212,12 +212,60 @@ def impliedVolWithStikes(adjclose, strikes, type):
             print ""
             i += 1
 
-    # if(type == 'c'):
-    #     plt.plot(strikes, calls_impliedvols)
-    #     plt.ylabel("Implied Option Volatility")
-    #     plt.xlabel("Strike")
-    #     plt.title('Verticle IVol Skew', color='#000000')
-    #     plt.show()
+    if(type == 'c'):
+        plt.axvline(x=spot, ymin=0, ymax = 0.7, linewidth=2, color='k')
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #1
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #2
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #3
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #4 
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #5
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #6
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #7
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #8
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #9
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #10
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #11
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #12
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #13
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #14 
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #15
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #16
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #17
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #18
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #19
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #20
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #21
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #22
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #23
+        strikes.pop(0)
+        calls_impliedvols.pop(0) #24
+        plt.plot(strikes, calls_impliedvols, 'ro')
+        plt.ylabel("Implied Call Option Volatility")
+        plt.xlabel("Strike")
+        plt.title('Verticle IVol Skew', color='#000000')
 
     i = 0;
     if(type == 'p'):
@@ -236,10 +284,37 @@ def impliedVolWithStikes(adjclose, strikes, type):
             print ""
             i += 1
     if(type == 'p'):
+        plt.figure()
         strikes.pop(0)
-        puts_impliedvols.pop(0)
-        plt.plot(strikes, puts_impliedvols)
-        plt.ylabel("Implied Option Volatility")
+        puts_impliedvols.pop(0) #1
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #2
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #3
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #4
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #5
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #6
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #7
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #8
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #9
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #10
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #11
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #12
+        strikes.pop(0)
+        puts_impliedvols.pop(0) #13
+
+        plt.plot(strikes, puts_impliedvols, 'ro')
+        plt.ylabel("Implied Put Option Volatility")
+        plt.axvline(x=spot, ymin=0, ymax = 0.7, linewidth=2, color='k')
         plt.xlabel("Strike")
         plt.title('Verticle IVol Skew', color='#000000')
         plt.show()
@@ -271,7 +346,7 @@ def OptionPrice(spot, strike, NbExp, vol, rate, q, optionType):
         else:
             print "TESTTESTTESTTEST", long((math.max(spot - strike, 0)))
             return float((math.max(strike - spot, 0)))
-                
+    
     d1 = ((math.log(spot / strike)) + (rate - q + (vol * vol) / 2) * T) / (vol * math.sqrt(T))
     d2 = d1 - vol * math.sqrt(T)
     Nd1 = cdnf(d1)
