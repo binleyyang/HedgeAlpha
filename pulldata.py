@@ -55,6 +55,7 @@ g_ask_put = []
 g_mid_put =[]
 g_strike_put =[]
 g_open_int_put = []
+g_expiry = []
 
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
 # Y, M, D
@@ -63,44 +64,62 @@ end = datetime.date.today()
         
         
 def googleQuote(ticker):
+    chain = []
     url = 'http://www.google.com/finance/option_chain?q=%s&output=json'% ticker
-    doc = urlopen(url)
-    content = doc.read()
-    print content
+    content = urlopen(url).read()
     a = fix_json(content)
     #print a
-    quote = json.loads(a)
-    print "\n=============================GIVE ME SOME SPACE===============================\n"
-    #print quote
+    opts = eval(a)
+    exp = opts['expirations']
+
+    for expiry in exp:
+        y = expiry['y']
+        m = expiry['m']
+        d = expiry['d']
+        url = 'http://www.google.com/finance/option_chain?q=%s&output=json&expy=%s&expm=%s&expd=%s'%(ticker,y,m,d)
+        lines = fix_json(urllib2.urlopen(url).read())
+        chain.append(lines)
+        
+    i = 1
+    for lines in chain:
+        quote = json.loads(lines)
+        print i, ' : ', quote, '\n'
+        i += 1
+
+    return chain
+
+    # quote = json.loads(a)
+    # print "\n=============================GIVE ME SOME SPACE===============================\n"
+    # #print quote
     
-    puts = quote['puts']
-    calls = quote['calls']
-    # print "PUTS:      ", puts
-    # print "CALLS:     ", calls
-    
-    for c in calls:
-        if c['b'] == '-' or c['a'] == '-':
-            pass
-        else:
-            g_bid_call.append(float(c['b']))
-            g_ask_call.append(float(c['a']))
-            g_strike_call.append(float(c['strike']))
-            bid = float(c['b'])
-            ask = float(c['a'])
-            mid = (bid + ask) / 2
-            g_mid_call.append(mid)
-    for p in puts:
-        if p['b'] == '-' or p['a'] == '-':
-            pass
-        else:
-            g_bid_put.append(float(p['b']))
-            g_ask_put.append(float(p['a']))
-            g_strike_put.append(float(p['strike']))
-            bid = float(p['b'])
-            ask = float(p['a'])
-            mid = (bid + ask) / 2
-            g_mid_put.append(mid)
-    return quote
+    # puts = quote['puts']
+    # calls = quote['calls']
+    # # print "PUTS:      ", puts
+    # # print "CALLS:     ", calls
+
+    # for c in calls:
+    #     if c['b'] == '-' or c['a'] == '-':
+    #         pass
+    #     else:
+    #         g_bid_call.append(float(c['b']))
+    #         g_ask_call.append(float(c['a']))
+    #         g_strike_call.append(float(c['strike']))
+    #         bid = float(c['b'])
+    #         ask = float(c['a'])
+    #         mid = (bid + ask) / 2
+    #         g_mid_call.append(mid)
+    # for p in puts:
+    #     if p['b'] == '-' or p['a'] == '-':
+    #         pass
+    #     else:
+    #         g_bid_put.append(float(p['b']))
+    #         g_ask_put.append(float(p['a']))
+    #         g_strike_put.append(float(p['strike']))
+    #         bid = float(p['b'])
+    #         ask = float(p['a'])
+    #         mid = (bid + ask) / 2
+    #         g_mid_put.append(mid)
+    # return quote
 
 def fix_json(k):
     q=['cid','cp','s','cs','vol','expiry','underlying_id','underlying_price',
@@ -122,7 +141,7 @@ def makeUrl(stock, start, end):
     return urlToVisit+dateUrl
 
 def pullData(stock,cut):
-    get_quote(stock)
+    #get_quote(stock)
     googleQuote(stock)
     try: 
         print "Currently pulling", stock
