@@ -5,6 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+import matplotlib.pyplot as plt
+import numpy as np
+
 from urllib import urlopen
 import json
 
@@ -147,10 +152,31 @@ def pullData(stock,cut):
                 adjclose.append(s[6])
     except Exception, e:
         print str(e), 'error'
-    
+
+
+    #graph figure initialization
+    fig = plt.figure()
+
+    #vol smile initialization
+    ########################################
+    plt.subplot(2, 1, 1)
+    #impliedVolWithStikes(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
+    ########################################
+
+    #3D curve initiliazation
+    ########################################
+    #replace ax initialization with this if only graphing 3D curve
+    # ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(2, 1, 2, projection='3d')
+
+    main3DImpVol=[]
+    main3DStrike=[]
+    main3DDates=[]
+    ########################################
+
     i = 1
     for line in data:
-        
+        curDate3Dz=[]
         strike_call = []
         strike_put = []
         mid_call = []
@@ -159,6 +185,7 @@ def pullData(stock,cut):
         puts = quote['puts']
         calls = quote['calls']
         expiry_date = datetime.datetime.strptime(calls[1]['expiry'], '%b %d, %Y')
+    
         expirys.append(expiry_date)
         d = expiry_date - datetime.datetime.today()
         global daysToMaturityPrime
@@ -178,12 +205,49 @@ def pullData(stock,cut):
                 mid = (float(p['b']) + float(p['a'])) / 2
                 mid_put.append(mid)
 
-        impliedVolWithStikes(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
+        impliedVolWithStikes3D(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
+
+        for i in range(0,len(calls_impliedvols)): 
+           curDate3Dz.append(daysToMaturityPrime)
+
+        print "-------------------------------"
+        print "len(strike_call): ",       len(strike_call)
+        print "len(calls_impliedvols): ",      len(calls_impliedvols)
+        print "len(curDate3Dz): ",  len(curDate3Dz)
+        print "-------------------------------"
+        #ax.plot_trisurf(strike_call, calls_impliedvols, curDate3Dz, cmap=cm.jet, linewidth=0.2)
+        
+        main3DImpVol.extend(calls_impliedvols)
+        main3DStrike.extend(strike_call)
+        main3DDates.extend(curDate3Dz)
+
+        del curDate3Dz[:]
+        curDate3Dz=[]
+        for i in range(0,len(puts_impliedvols)): 
+            curDate3Dz.append(daysToMaturityPrime)
+        
+        print "-------------------------------"
+        print "len(strike_put): ",       len(strike_put)
+        print "len(puts_impliedvols): ",      len(puts_impliedvols)
+        print "len(curDate3Dz): ",  len(curDate3Dz)
+        print "-------------------------------"
+        #ax.plot_trisurf(strike_put, puts_impliedvols, curDate3Dz, cmap=cm.jet, linewidth=0.2)
+        
+        main3DImpVol.extend(puts_impliedvols)
+        main3DStrike.extend(strike_put)
+        main3DDates.extend(curDate3Dz)
+
         del puts_impliedvols[:]
         del calls_impliedvols[:]
-        
         # print 'RAN', i, 'TIMES\n'
         # i += 1
+
+    ax.plot_trisurf(main3DStrike, main3DDates, main3DImpVol, cmap=cm.jet, linewidth=0.2)
+    
+
+    #count how many figures
+    #delete from back until fig1. fig1 has everything and is correct
+    plt.show()
         
 def _request(symbol, stat):
     url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
@@ -275,8 +339,9 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             print "counterPutsLeft: ",  counterPutsLeft
 
             #getting rid of first outlier for OTM puts
-            strikesput.pop(0)
-            puts_impliedvols.pop(0)
+            if len(strikesput)>0:
+                strikesput.pop(0)
+                puts_impliedvols.pop(0)
 
             #cutting.
             #for example: 
@@ -321,7 +386,7 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
         plt.title('STRIKE - VOLATILITY SMILE', color='#000000')
 
         #display
-        plt.show()
+        #plt.show()
 
 
     i = 0;
@@ -382,6 +447,105 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
         plt.title('Verticle IVol Skew', color='#000000')
         plt.show()
     return
+
+
+def impliedVolWithStikes3D(adjclose, strikes, strikesput, callMid, putMid, type, cut):
+    logreturn(adjclose)
+    variancecalc(logreturns)
+    annualvol(stdev(varianceaverage(variancecalcs)))
+    print "Spot:                                    ", spot
+    print "Historical annual volalitility for Call: ", annualvolprime    
+
+    i = 0;
+    j=0;
+    maxCallImpVol=0;
+    if(type == 'volsmile'):
+
+        while i < len(strikes):
+            #call option premium calculation
+            option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
+            # print "Theoretical of Call: $", option
+            # print "Market Price of Call: $", callMid[i]
+            #print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
+            
+            #call option implied volatility calculation
+            impliedvol = calls_annualvolimplied(option, callMid[i], strikes[i], "c",)
+
+            #calculating maximum impliedvol for calls, <=1. x/2 of this used for spot line length
+            if impliedvol<=1:
+                if impliedvol>maxCallImpVol:
+                    maxCallImpVol=impliedvol
+            # print "Strike:                                  ", strikes[i]
+            # print "Historical annual volalitility for Call: ", annualvolprime
+            # print "Implied annual volalitity for Call:      ", impliedvol
+            # print ""
+            i += 1
+
+        while j < len(strikesput):
+            #put option premium calculation
+            option2 = OptionPrice(spot, strikesput[j], daysToMaturityPrime, annualvolprime, rate, q, "p")
+            # print "Theoretical of Put: $", option2
+            # print "Market Price of Put: $", putMid[j]
+            #print "Input Check: ", "spot: ", spot, "strike: ", strikesput[j], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
+            
+            #call option implied volatility calculation
+            impliedvol2 = puts_annualvolimplied(option2, putMid[j], strikesput[j], "p")
+            # print "Strike:                                 ", strikesput[j]
+            # print "Historical annual volalitility for Put: ", annualvolprime
+            # print "Implied annual volalitity for Put:      ", impliedvol2
+            # print ""
+            j += 1
+
+    if(type == 'volsmile'):
+        plt.figure()
+        
+        if cut == 'Y':
+            putsLength=len(puts_impliedvols)
+            callsLength=len(calls_impliedvols)
+            diff=callsLength-putsLength
+
+            #puts on left side count
+            minStrikePut=spot
+            counterPutsLeft=0
+            for i in strikesput:
+                if i<spot:
+                    minStrikePut=i
+                    counterPutsLeft+=1
+                    
+            #calls on left side count
+            counterCallsLeft=0
+            for i in strikes:
+                if i<spot:
+                    counterCallsLeft+=1
+
+            print "putsLength: ",       putsLength
+            print "callsLength: ",      callsLength
+            print "counterPutsLeft: ",  counterPutsLeft
+
+            #getting rid of first outlier for OTM puts
+            if len(strikesput)>0:
+                strikesput.pop(0)
+                puts_impliedvols.pop(0)
+
+            #cutting.
+            #for example: 
+            #16 puts below spot, so want graph 16 calls below spot
+            #currently have <counterCallsLeft> calls below spot 
+            #16=counterCallsLeft-x (x is how many pops)
+            x=counterCallsLeft-counterPutsLeft
+            diff=callsLength-putsLength
+            if diff>0:
+                for i in range(0,x):
+                    strikes.pop(0)
+                    calls_impliedvols.pop(0)
+
+        print "strikesput length:",       len(strikesput)
+        print "puts_impliedvols length:", len(puts_impliedvols)
+        print "strikescalls length:",       len(strikes)
+        print "calls_impliedvols length:", len(calls_impliedvols)
+    return
+
+
 
             
 # def timeToMaturity(year, month, day):
@@ -548,7 +712,7 @@ def calls_annualvolimplied(modelOption, realOption, strike, optionType):
                 calls_annualvolimplied = annualvol2(volimplied)
                 #print 'real > model', calls_annualvolimplied
                 if calls_annualvolimplied < 0:
-                    print 'ERROR: OUT OF THE MONEY'
+                    #print 'ERROR: OUT OF THE MONEY'
                     break
         else:
             while (real < model):
@@ -557,7 +721,7 @@ def calls_annualvolimplied(modelOption, realOption, strike, optionType):
                 calls_annualvolimplied = annualvol2(volimplied)
                 #print 'real < model', calls_annualvolimplied
                 if calls_annualvolimplied < 0:
-                    print 'ERROR: OUT OF THE MONEY'
+                    #print 'ERROR: OUT OF THE MONEY'
                     break
         
         calls_impliedvols.append(calls_annualvolimplied)
@@ -597,7 +761,7 @@ while True:
     # spot = float(raw_input('Spot: '))
     #strike = float(raw_input('Strike: '))
     #realOptionPrice = float(raw_input('Real Option Price: '))
-    #daysToMaturityPrime = float(raw_input('Days to Maturity: '))
+    daysToMaturityPrime = float(raw_input('Days to Maturity: '))
     #rate = float(raw_input('Risk-free Rate: '))
     # q = float(raw_input('Div/yield: '))
     cut = raw_input('Cut (Y/N): ')
