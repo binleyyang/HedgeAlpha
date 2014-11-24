@@ -32,8 +32,6 @@ daysToMaturityPrime = float()
 rate = .0015
 q = float()
 spot = float()
-#strike = float()
-#realOptionPrice = float()
 
 puts_impliedvols = []
 calls_impliedvols = []
@@ -48,20 +46,6 @@ low = []
 close = []
 volume = []
 expirys = []
-
-g_price_call = []
-g_bid_call = []
-g_ask_call = []
-g_mid_call = []
-g_open_int_call = []
-g_strike_call = []
-g_price_put = []
-g_bid_put = []
-g_ask_put = []
-g_mid_put =[]
-g_strike_put =[]
-g_open_int_put = []
-g_expiry = []
 
 urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
 # Y, M, D
@@ -156,11 +140,43 @@ def pullData(stock,cut):
 
     #graph figure initialization
     fig = plt.figure()
+    fig.suptitle('Volatility Smile and Surface', fontsize=18)
 
     #vol smile initialization
     ########################################
     plt.subplot(2, 1, 1)
-    #impliedVolWithStikes(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
+    createExpiryDate = datetime.datetime.today() + datetime.timedelta(days=daysToMaturityPrime)
+    user_Day = createExpiryDate.day
+    user_Month = createExpiryDate.month
+    user_Year = createExpiryDate.year
+    # print 'YEAR', user_Year, 'MONTH', user_Month, 'DAY', user_Day
+    # print "NEW EXPIRY DATE: ", createExpiryDate
+    url = 'http://www.google.com/finance/option_chain?q=%s&output=json&expy=%s&expm=%s&expd=%s'%(stock,user_Year,user_Month,user_Day)
+    lines = fix_json(urllib2.urlopen(url).read())
+    quote = json.loads(lines)
+    call_strike = []
+    put_strike = []
+    call_mid = []
+    put_mid = []
+    puts = quote['puts']
+    calls = quote['calls']
+    for c in calls:
+        if c['b'] == '-' or c['a'] == '-':
+            pass
+        else:
+            call_strike.append(float(c['strike']))
+            mid = (float(c['b']) + float(c['a'])) / 2
+            call_mid.append(mid)
+    for p in puts:
+        if p['b'] == '-' or p['a'] == '-':
+            pass
+        else:
+            put_strike.append(float(p['strike']))
+            mid = (float(p['b']) + float(p['a'])) / 2
+            put_mid.append(mid)
+    impliedVolWithStikes(adjclose, call_strike, put_strike, call_mid, put_mid, createExpiryDate.date(), 'volsmile', cut)
+    del puts_impliedvols[:]
+    del calls_impliedvols[:]
     ########################################
 
     #3D curve initiliazation
@@ -211,9 +227,9 @@ def pullData(stock,cut):
            curDate3Dz.append(daysToMaturityPrime)
 
         print "-------------------------------"
-        print "len(strike_call): ",       len(strike_call)
-        print "len(calls_impliedvols): ",      len(calls_impliedvols)
-        print "len(curDate3Dz): ",  len(curDate3Dz)
+        print "len(strike_call): ",             len(strike_call)
+        print "len(calls_impliedvols): ",       len(calls_impliedvols)
+        print "len(curDate3Dz): ",              len(curDate3Dz)
         print "-------------------------------"
         #ax.plot_trisurf(strike_call, calls_impliedvols, curDate3Dz, cmap=cm.jet, linewidth=0.2)
         
@@ -227,9 +243,9 @@ def pullData(stock,cut):
             curDate3Dz.append(daysToMaturityPrime)
         
         print "-------------------------------"
-        print "len(strike_put): ",       len(strike_put)
-        print "len(puts_impliedvols): ",      len(puts_impliedvols)
-        print "len(curDate3Dz): ",  len(curDate3Dz)
+        print "len(strike_put): ",              len(strike_put)
+        print "len(puts_impliedvols): ",        len(puts_impliedvols)
+        print "len(curDate3Dz): ",              len(curDate3Dz)
         print "-------------------------------"
         #ax.plot_trisurf(strike_put, puts_impliedvols, curDate3Dz, cmap=cm.jet, linewidth=0.2)
         
@@ -265,14 +281,14 @@ def get_quote(symbol):
     q = float(values[0]) / 100 
     spot = float(values[1])
     
-def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, cut):
+def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, expiry_date, type, cut):
     logreturn(adjclose)
     variancecalc(logreturns)
     annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime    
 
-    i = 0;
+    i=0;
     j=0;
     maxCallImpVol=0;
     if(type == 'volsmile'):
@@ -313,7 +329,7 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             j += 1
 
     if(type == 'volsmile'):
-        plt.figure()
+        #plt.figure()
         
         if cut == 'Y':
             putsLength=len(puts_impliedvols)
@@ -362,11 +378,12 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             plt.text(spot,(maxCallImpVol/2),('ATM\n($%s)'%spot),rotation=0)
             plt.text(spot+20,(maxCallImpVol/2)+0.1,('----------->\nOTM Calls\nITM Puts'),rotation=0)
             plt.text(spot-30,(maxCallImpVol/2)+0.1,('<-----------\nITM Calls\nOTM Puts'),rotation=0)
+            plt.text(spot, (maxCallImpVol/1.25), ('Expiry: %s'%(str(expiry_date))),rotation=0)
 
-        print "strikesput length:",       len(strikesput)
-        print "puts_impliedvols length:", len(puts_impliedvols)
+        print "strikesput length:",         len(strikesput)
+        print "puts_impliedvols length:",   len(puts_impliedvols)
         print "strikescalls length:",       len(strikes)
-        print "calls_impliedvols length:", len(calls_impliedvols)
+        print "calls_impliedvols length:",  len(calls_impliedvols)
         putsPoints,=plt.plot(strikesput, puts_impliedvols, 'bo')
         callsPoints,=plt.plot(strikes, calls_impliedvols, 'ro')
         plt.plot(strikesput, puts_impliedvols, 'k--', strikes, calls_impliedvols, 'k--')
@@ -497,7 +514,6 @@ def impliedVolWithStikes3D(adjclose, strikes, strikesput, callMid, putMid, type,
             j += 1
 
     if(type == 'volsmile'):
-        plt.figure()
         
         if cut == 'Y':
             putsLength=len(puts_impliedvols)
