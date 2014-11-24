@@ -79,47 +79,15 @@ def googleQuote(ticker):
         url = 'http://www.google.com/finance/option_chain?q=%s&output=json&expy=%s&expm=%s&expd=%s'%(ticker,y,m,d)
         lines = fix_json(urllib2.urlopen(url).read())
         chain.append(lines)
-        
-    i = 1
-    for lines in chain:
-        quote = json.loads(lines)
-        print i, ' : ', quote, '\n'
-        i += 1
+
+    #prints out option chain data for each expiry date
+    #i = 1
+    #for lines in chain:
+    #    quote = json.loads(lines)
+    #    print i, ' : ', quote, '\n'
+    #    i += 1
 
     return chain
-
-    # quote = json.loads(a)
-    # print "\n=============================GIVE ME SOME SPACE===============================\n"
-    # #print quote
-    
-    # puts = quote['puts']
-    # calls = quote['calls']
-    # # print "PUTS:      ", puts
-    # # print "CALLS:     ", calls
-
-    # for c in calls:
-    #     if c['b'] == '-' or c['a'] == '-':
-    #         pass
-    #     else:
-    #         g_bid_call.append(float(c['b']))
-    #         g_ask_call.append(float(c['a']))
-    #         g_strike_call.append(float(c['strike']))
-    #         bid = float(c['b'])
-    #         ask = float(c['a'])
-    #         mid = (bid + ask) / 2
-    #         g_mid_call.append(mid)
-    # for p in puts:
-    #     if p['b'] == '-' or p['a'] == '-':
-    #         pass
-    #     else:
-    #         g_bid_put.append(float(p['b']))
-    #         g_ask_put.append(float(p['a']))
-    #         g_strike_put.append(float(p['strike']))
-    #         bid = float(p['b'])
-    #         ask = float(p['a'])
-    #         mid = (bid + ask) / 2
-    #         g_mid_put.append(mid)
-    # return quote
 
 def fix_json(k):
     q=['cid','cp','s','cs','vol','expiry','underlying_id','underlying_price',
@@ -141,8 +109,8 @@ def makeUrl(stock, start, end):
     return urlToVisit+dateUrl
 
 def pullData(stock,cut):
-    #get_quote(stock)
-    googleQuote(stock)
+    get_quote(stock)
+    data = googleQuote(stock)
     try: 
         print "Currently pulling", stock
         stockUrl = makeUrl(stock, start, end)
@@ -178,10 +146,48 @@ def pullData(stock,cut):
                 adjclose.append(s[6])
     except Exception, e:
         print str(e), 'error'
+    
+    i = 1
+    for line in data:
+        
+        strike_call = []
+        strike_put = []
+        mid_call = []
+        mid_put = []
+        quote = json.loads(line)
+        puts = quote['puts']
+        calls = quote['calls']
+        expiry_date = datetime.datetime.strptime(calls[1]['expiry'], '%b %d, %Y')
+        d = expiry_date - datetime.datetime.today()
+        #d = total_seconds() / (3600 * 24) #returns the number of days to maturity
+        global daysToMaturityPrime
+        daysToMaturityPrime = d.total_seconds() / (3600 * 24)
+        #print 'PUTS EXPIRY', puts_expiry
+        #print 'CALLS EXPIRY', calls_expiry
+        for c in calls:
+            if c['b'] == '-' or c['a'] == '-':
+                pass
+            else:
+                strike_call.append(float(c['strike']))
+                mid = (float(c['b']) + float(c['a'])) / 2
+                mid_call.append(mid)
+        for p in puts:
+            if p['b'] == '-' or p['a'] == '-':
+                pass
+            else:
+                strike_put.append(float(p['strike']))
+                mid = (float(p['b']) + float(p['a'])) / 2
+                mid_put.append(mid)
+
+        impliedVolWithStikes(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
+        
+        
+        # print 'RAN', i, 'TIMES\n'
+        # i += 1
 
     #impliedVolWithStikes(adjclose, g_strike_call, "", 'c',"")
     #impliedVolWithStikes(adjclose, g_strike_put, "",'p',"")
-    impliedVolWithStikes(adjclose, g_strike_call, g_strike_put,'volsmile',cut)
+    #impliedVolWithStikes(adjclose, g_strike_call, g_strike_put,'volsmile',cut)
         
 def _request(symbol, stat):
     url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
@@ -199,7 +205,7 @@ def get_quote(symbol):
     q = float(values[0]) / 100 
     spot = float(values[1])
     
-def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
+def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, cut):
     logreturn(adjclose)
     variancecalc(logreturns)
     annualvol(stdev(varianceaverage(variancecalcs)))
@@ -227,11 +233,11 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
             #call option premium calculation
             option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
             print "Theoretical of Call: $", option
-            print "Market Price of Call: $", g_mid_call[i]
+            print "Market Price of Call: $", callMid[i]
             print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
             #call option implied volatility calculation
-            impliedvol = calls_annualvolimplied(option, g_mid_call[i], strikes[i], "c",)
+            impliedvol = calls_annualvolimplied(option, callMid[i], strikes[i], "c",)
 
             #calculating maximum impliedvol for calls, <=1. x/2 of this used for spot line length
             if impliedvol<=1:
@@ -247,12 +253,12 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
             #put option premium calculation
             option2 = OptionPrice(spot, strikesput[j], daysToMaturityPrime, annualvolprime, rate, q, "p")
             print "Theoretical of Put: $", option2
-            print "Market Price of Put: $", g_mid_put[j]
+            print "Market Price of Put: $", putMid[j]
             print "Input Check: ", "spot: ", spot, "strike: ", strikesput[j], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
             #call option implied volatility calculation
-            impliedvol2 = puts_annualvolimplied(option2, g_mid_put[j], strikesput[j], "p")
-            print "Strike:                                  ", strikesput[j]
+            impliedvol2 = puts_annualvolimplied(option2, putMid[j], strikesput[j], "p")
+            print "Strike:                                 ", strikesput[j]
             print "Historical annual volalitility for Put: ", annualvolprime
             print "Implied annual volalitity for Put:      ", impliedvol2
             print ""
@@ -335,10 +341,10 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
         while i < len(strikes):
             option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
             print "Theoretical of Call: $", option
-            print "Market Price of Call: $", g_mid_call[i]
+            print "Market Price of Call: $", callMid[i]
             print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
-            impliedvol = calls_annualvolimplied(option, g_mid_call[i], strikes[i], "c",)
+            impliedvol = calls_annualvolimplied(option, callMid[i], strikes[i], "c",)
         
             print "Strike:                                  ", strikes[i]
             print "Historical annual volalitility for Call: ", annualvolprime
@@ -410,10 +416,10 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
         while i < len(strikes):
             option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
             print "Theoretical of Put: $", option
-            print "Market Price of Put: $", g_mid_put[i]
+            print "Market Price of Put: $", putMid[i]
             print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
-            impliedvol = puts_annualvolimplied(option, g_mid_put[i], strikes[i], "p")
+            impliedvol = puts_annualvolimplied(option, putMid[i], strikes[i], "p")
 
             print "Strike:                                  ", strikes[i]
             print "Historical annual volalitility for Put: ", annualvolprime
@@ -464,12 +470,12 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
     return
 
             
-def timeToMaturity(year, month, day):
-    maturityDate = datetime.date(year, month, day)
-    difference = maturityDate - end
-    global daysToMaturityPrime
-    daysToMaturityPrime = (difference.total_seconds() / (3600 * 24))
-    return daysToMaturityPrime
+# def timeToMaturity(year, month, day):
+#     maturityDate = datetime.date(year, month, day)
+#     difference = maturityDate - end
+#     global daysToMaturityPrime
+#     daysToMaturityPrime = (difference.total_seconds() / (3600 * 24))
+#     return daysToMaturityPrime
         
 def OptionPrice(spot, strike, NbExp, vol, rate, q, optionType):
     # v = float()
@@ -677,7 +683,7 @@ while True:
     # spot = float(raw_input('Spot: '))
     #strike = float(raw_input('Strike: '))
     #realOptionPrice = float(raw_input('Real Option Price: '))
-    daysToMaturityPrime = float(raw_input('Days to Maturity: '))
+    #daysToMaturityPrime = float(raw_input('Days to Maturity: '))
     #rate = float(raw_input('Risk-free Rate: '))
     # q = float(raw_input('Div/yield: '))
     cut = raw_input('Cut (Y/N): ')
