@@ -42,6 +42,7 @@ high = []
 low = []
 close = []
 volume = []
+expirys = []
 
 g_price_call = []
 g_bid_call = []
@@ -158,12 +159,10 @@ def pullData(stock,cut):
         puts = quote['puts']
         calls = quote['calls']
         expiry_date = datetime.datetime.strptime(calls[1]['expiry'], '%b %d, %Y')
+        expirys.append(expiry_date)
         d = expiry_date - datetime.datetime.today()
-        #d = total_seconds() / (3600 * 24) #returns the number of days to maturity
         global daysToMaturityPrime
         daysToMaturityPrime = d.total_seconds() / (3600 * 24)
-        #print 'PUTS EXPIRY', puts_expiry
-        #print 'CALLS EXPIRY', calls_expiry
         for c in calls:
             if c['b'] == '-' or c['a'] == '-':
                 pass
@@ -180,14 +179,11 @@ def pullData(stock,cut):
                 mid_put.append(mid)
 
         impliedVolWithStikes(adjclose, strike_call, strike_put, mid_call, mid_put, 'volsmile', cut)
-        
+        del puts_impliedvols[:]
+        del calls_impliedvols[:]
         
         # print 'RAN', i, 'TIMES\n'
         # i += 1
-
-    #impliedVolWithStikes(adjclose, g_strike_call, "", 'c',"")
-    #impliedVolWithStikes(adjclose, g_strike_put, "",'p',"")
-    #impliedVolWithStikes(adjclose, g_strike_call, g_strike_put,'volsmile',cut)
         
 def _request(symbol, stat):
     url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
@@ -211,19 +207,7 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
     annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime    
-    # i = 0;
-    # while i < len(strikes)/2:
-        
-    #     option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "p")
-        
-    #     impliedvol = calls_annualvolimplied(option, g_mid_call[i], strikes[i], "p")
-    
-    #     #print "Average of adjclose:                     ", average
-    #     print "Strike:                                  ", strikes[i]
-    #     print "Historical annual volalitility for Call: ", annualvolprime
-    #     print "Implied annual volalitity for Call:      ", impliedvol
-    #     print ""
-    #     i += 1
+
     i = 0;
     j=0;
     maxCallImpVol=0;
@@ -232,9 +216,9 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
         while i < len(strikes):
             #call option premium calculation
             option = OptionPrice(spot, strikes[i], daysToMaturityPrime, annualvolprime, rate, q, "c")
-            print "Theoretical of Call: $", option
-            print "Market Price of Call: $", callMid[i]
-            print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
+            # print "Theoretical of Call: $", option
+            # print "Market Price of Call: $", callMid[i]
+            #print "Input Check: ", "spot: ", spot, "strike: ", strikes[i], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
             #call option implied volatility calculation
             impliedvol = calls_annualvolimplied(option, callMid[i], strikes[i], "c",)
@@ -243,25 +227,25 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             if impliedvol<=1:
                 if impliedvol>maxCallImpVol:
                     maxCallImpVol=impliedvol
-            print "Strike:                                  ", strikes[i]
-            print "Historical annual volalitility for Call: ", annualvolprime
-            print "Implied annual volalitity for Call:      ", impliedvol
-            print ""
+            # print "Strike:                                  ", strikes[i]
+            # print "Historical annual volalitility for Call: ", annualvolprime
+            # print "Implied annual volalitity for Call:      ", impliedvol
+            # print ""
             i += 1
 
         while j < len(strikesput):
             #put option premium calculation
             option2 = OptionPrice(spot, strikesput[j], daysToMaturityPrime, annualvolprime, rate, q, "p")
-            print "Theoretical of Put: $", option2
-            print "Market Price of Put: $", putMid[j]
-            print "Input Check: ", "spot: ", spot, "strike: ", strikesput[j], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
+            # print "Theoretical of Put: $", option2
+            # print "Market Price of Put: $", putMid[j]
+            #print "Input Check: ", "spot: ", spot, "strike: ", strikesput[j], "rate: ", rate, "q (div)", q, "days to maturityPrime: ", daysToMaturityPrime
             
             #call option implied volatility calculation
             impliedvol2 = puts_annualvolimplied(option2, putMid[j], strikesput[j], "p")
-            print "Strike:                                 ", strikesput[j]
-            print "Historical annual volalitility for Put: ", annualvolprime
-            print "Implied annual volalitity for Put:      ", impliedvol2
-            print ""
+            # print "Strike:                                 ", strikesput[j]
+            # print "Historical annual volalitility for Put: ", annualvolprime
+            # print "Implied annual volalitity for Put:      ", impliedvol2
+            # print ""
             j += 1
 
     if(type == 'volsmile'):
@@ -286,9 +270,9 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
                 if i<spot:
                     counterCallsLeft+=1
 
-            print "putsLength: ", putsLength
-            print "callsLength: ", callsLength
-            print "counterPutsLeft: ", counterPutsLeft
+            print "putsLength: ",       putsLength
+            print "callsLength: ",      callsLength
+            print "counterPutsLeft: ",  counterPutsLeft
 
             #getting rid of first outlier for OTM puts
             strikesput.pop(0)
@@ -314,6 +298,10 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             plt.text(spot+20,(maxCallImpVol/2)+0.1,('----------->\nOTM Calls\nITM Puts'),rotation=0)
             plt.text(spot-30,(maxCallImpVol/2)+0.1,('<-----------\nITM Calls\nOTM Puts'),rotation=0)
 
+        print "strikesput length:",       len(strikesput)
+        print "puts_impliedvols length:", len(puts_impliedvols)
+        print "strikescalls length:",       len(strikes)
+        print "calls_impliedvols length:", len(calls_impliedvols)
         putsPoints,=plt.plot(strikesput, puts_impliedvols, 'bo')
         callsPoints,=plt.plot(strikes, calls_impliedvols, 'ro')
         plt.plot(strikesput, puts_impliedvols, 'k--', strikes, calls_impliedvols, 'k--')
@@ -354,54 +342,6 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
 
     if(type == 'c'):
         plt.axvline(x=spot, ymin=0, ymax = 0.7, linewidth=2, color='k')
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #1
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #2
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #3
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #4 
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #5
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #6
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #7
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #8
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #9
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #10
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #11
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #12
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #13
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #14 
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #15
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #16
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #17
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #18
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #19
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #20
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #21
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #22
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #23
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #24
 
         plt.plot(strikes, calls_impliedvols, 'ro')
         #plt.plot(strikes, calls_impliedvols, 'k')
@@ -428,32 +368,6 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, type, c
             i += 1
     if(type == 'p'):
         plt.figure()
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #1
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #2
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #3
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #4
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #5
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #6
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #7
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #8
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #9
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #10
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #11
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #12
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #13
 
         temp1=strikes
         temp2=calls_impliedvols
@@ -663,7 +577,7 @@ def puts_annualvolimplied(modelOption, realOption, strike, optionType):
                 puts_annualvolimplied = annualvol2(volimplied)
                 #print 'real > model', calls_annualvolimplied
                 if puts_annualvolimplied < 0:
-                    print 'ERROR: OUT OF THE MONEY'
+                    # print 'ERROR: OUT OF THE MONEY'
                     break
         else:
             while (real < model):
@@ -672,7 +586,7 @@ def puts_annualvolimplied(modelOption, realOption, strike, optionType):
                 puts_annualvolimplied = annualvol2(volimplied)
                 #print 'real < model', calls_annualvolimplied
                 if puts_annualvolimplied < 0:
-                    print 'ERROR: OUT OF THE MONEY'
+                    # print 'ERROR: OUT OF THE MONEY'
                     break
              
         puts_impliedvols.append(puts_annualvolimplied)
