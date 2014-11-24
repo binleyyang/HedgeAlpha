@@ -242,6 +242,15 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
     if(type == 'volsmile'):
         plt.figure()
         
+        #general uncut volatility smile
+        plt.subplot(2, 1, 2)
+        plt.plot(strikesput, puts_impliedvols, 'bo')
+        plt.plot(strikes, calls_impliedvols, 'ro')
+        plt.plot(strikesput, puts_impliedvols, 'k--', strikes, calls_impliedvols, 'k--')
+        plt.ylabel("Implied Option Volatility")
+        plt.xlabel("Strike")
+        plt.title('STRIKE - All Calls Puts', color='#000000')
+
         if cut == 'Y':
             putsLength=len(puts_impliedvols)
             callsLength=len(calls_impliedvols)
@@ -281,6 +290,7 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
                     strikes.pop(0)
                     calls_impliedvols.pop(0)
 
+        plt.subplot(2, 1, 1)
         print "maxCallImpVol: ", maxCallImpVol
         plt.axvline(x=spot, ymin=0, ymax=(maxCallImpVol/2), linewidth=2, linestyle='dashed', color='k')
         
@@ -307,6 +317,26 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
         plt.xlabel("Strike")
         plt.title('STRIKE - VOLATILITY SMILE', color='#000000')
 
+       
+
+        
+
+
+
+        # y1 = np.cos(2 * np.pi * x1) * np.exp(-x1)
+        # y2 = np.cos(2 * np.pi * x2)
+        # plt.subplot(2, 1, 3)
+        # plt.plot(x2, y2, 'r.-')
+        # plt.xlabel('time (s)')
+        # plt.ylabel('Undamped')
+
+
+        # y1 = np.cos(2 * np.pi * x1) * np.exp(-x1)
+        # y2 = np.cos(2 * np.pi * x2)
+        # plt.subplot(2, 1, 4)
+        # plt.plot(x2, y2, 'r.-')
+        # plt.xlabel('time (s)')
+        # plt.ylabel('Undamped')
         #display
         plt.show()
 
@@ -330,54 +360,8 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
     if(type == 'c'):
         plt.axvline(x=spot, ymin=0, ymax = 0.7, linewidth=2, color='k')
         # strikes.pop(0)
-        # calls_impliedvols.pop(0) #1
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #2
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #3
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #4 
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #5
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #6
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #7
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #8
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #9
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #10
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #11
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #12
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #13
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #14 
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #15
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #16
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #17
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #18
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #19
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #20
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #21
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #22
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #23
-        # strikes.pop(0)
-        # calls_impliedvols.pop(0) #24
-
+        # calls_impliedvols.pop(0)
+        
         plt.plot(strikes, calls_impliedvols, 'ro')
         #plt.plot(strikes, calls_impliedvols, 'k')
         plt.ylabel("Implied Call Option Volatility")
@@ -404,36 +388,10 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, type,cut):
     if(type == 'p'):
         plt.figure()
         # strikes.pop(0)
-        # puts_impliedvols.pop(0) #1
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #2
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #3
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #4
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #5
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #6
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #7
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #8
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #9
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #10
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #11
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #12
-        # strikes.pop(0)
-        # puts_impliedvols.pop(0) #13
+        # puts_impliedvols.pop(0)
 
         temp1=strikes
         temp2=calls_impliedvols
-
-
 
         plt.plot(strikes, puts_impliedvols, 'ro')
         #plt.plot(strikes, calls_impliedvols, 'k')
