@@ -136,8 +136,9 @@ def pullData(stock,cut):
                 adjclose.append(s[6])
     except Exception, e:
         print str(e), 'error'
-
-
+    logreturn(adjclose)
+    variancecalc(logreturns)
+    annualvol(stdev(varianceaverage(variancecalcs)))
     #graph figure initialization
     fig = plt.figure()
     fig.suptitle('Volatility Smile and Surface', fontsize=18)
@@ -280,11 +281,12 @@ def get_quote(symbol):
 
     q = float(values[0]) / 100 
     spot = float(values[1])
+
     
 def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, expiry_date, type, cut):
-    logreturn(adjclose)
-    variancecalc(logreturns)
-    annualvol(stdev(varianceaverage(variancecalcs)))
+    # logreturn(adjclose)
+    # variancecalc(logreturns)
+    # annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime    
 
@@ -467,9 +469,9 @@ def impliedVolWithStikes(adjclose, strikes, strikesput, callMid, putMid, expiry_
 
 
 def impliedVolWithStikes3D(adjclose, strikes, strikesput, callMid, putMid, type, cut):
-    logreturn(adjclose)
-    variancecalc(logreturns)
-    annualvol(stdev(varianceaverage(variancecalcs)))
+    # logreturn(adjclose)
+    # variancecalc(logreturns)
+    # annualvol(stdev(varianceaverage(variancecalcs)))
     print "Spot:                                    ", spot
     print "Historical annual volalitility for Call: ", annualvolprime    
 
@@ -660,6 +662,7 @@ def logreturn(adjclose):
         global logreturns
         logreturns.append(x)
         i += 1
+        print 'fuck'
         
 def averagelog(logreturns):
     sum = 0

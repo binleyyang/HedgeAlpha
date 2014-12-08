@@ -323,6 +323,9 @@ def option_price_put_american_proportional_dividends_binomial(S, K, r, sigma,
 
     return put_prices[0]
 
-
 while True:
+    spotVar = raw_input:('spotPrice :? >>')
+    strikeVar = raw_input('strikePrice :? >>')
+    dayVar = raw_input:('dayToExpiry :? >>')
+    rateVar = 0.0016
     
