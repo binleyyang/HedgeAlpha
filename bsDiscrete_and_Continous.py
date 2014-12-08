@@ -1,3 +1,36 @@
+import datetime
+import math
+import urllib2
+import array
+
+urlToVisit = "http://ichart.finance.yahoo.com/table.csv?s="
+start = datetime.date(2014, 11, 7)
+end = datetime.date.today()
+q = float()
+spot = float()
+HVol = float()
+
+adjclose = [] 
+date = []
+opent = []
+high = []
+low = []
+close = []
+volume = []
+expirys = []
+logreturns = []
+variancecalcs = [] 
+
+try:
+    # py3
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    # py2
+    from urllib2 import Request, urlopen
+    from urllib import urlencode
+
+
 def option_price_call_american_binomial(S, K, r, sigma, t, steps): 
     """American Option (Call) using binomial approximations
     Converted to Python from "Financial Numerical Recipes in C" by:
@@ -10,10 +43,10 @@ def option_price_call_american_binomial(S, K, r, sigma, t, steps):
     @param t: time to maturity 
     @param steps: Number of steps in binomial tree
     @return: Option price
-    """        
-    R = exp(r*(t/steps))       
+    """
+    R = math.exp(r*(t/steps))       
     Rinv = 1.0/R                 
-    u = exp(sigma*sqrt(t/steps)) 
+    u = math.exp(sigma*math.sqrt(t/steps)) 
     d = 1.0/u
     p_up = (R-d)/(u-d)
     p_down = 1.0-p_up
@@ -49,9 +82,9 @@ def option_price_put_american_binomial(S, K, r, sigma, t, steps):
     @param steps: Number of steps in binomial tree
     @return: Option price
     """ 
-    R = exp(r*(t/steps)) # interest rate for each step
+    R = math.exp(r*(t/steps)) # interest rate for each step
     Rinv = 1.0/R # inverse of interest rate
-    u = exp(sigma*sqrt(t/steps)) # up movement
+    u = math.exp(sigma*math.sqrt(t/steps)) # up movement
     uu = u*u
     d = 1.0/u
     p_up = (R-d)/(u-d)
@@ -94,9 +127,9 @@ def option_price_call_american_discrete_dividends_binomial(S, K, r, sigma, t, st
     if (no_dividends==0): 
         return option_price_call_american_binomial(S,K,r,sigma,t,steps) # just do regular
     steps_before_dividend = (int)(dividend_times[0]/t*steps)
-    R = exp(r*(t/steps))
+    R = math.exp(r*(t/steps))
     Rinv = 1.0/R
-    u = exp(sigma*sqrt(t/steps))
+    u = math.exp(sigma*math.sqrt(t/steps))
     d = 1.0/u
     pUp = (R-d)/(u-d)
     pDown = 1.0 - pUp
@@ -159,9 +192,9 @@ def option_price_put_american_discrete_dividends_binomial(S, K, r, sigma, t, ste
         return option_price_put_american_binomial(S,K,r,sigma,t,steps)
     steps_before_dividend = (int)(dividend_times[0]/t*steps);
    
-    R = exp(r*(t/steps))
+    R = math.exp(r*(t/steps))
     Rinv = 1.0/R
-    u = exp(sigma*sqrt(t/steps))
+    u = math.exp(sigma*math.sqrt(t/steps))
     uu= u*u
     d = 1.0/u
     pUp = (R-d)/(u-d)
@@ -226,7 +259,7 @@ def option_price_call_american_proportional_dividends_binomial(S, K, r, sigma,
     delta_t = time/no_steps
     R = exp(r*delta_t)
     Rinv = 1.0/R
-    u = exp(sigma*sqrt(delta_t))
+    u = exp(sigma*math.sqrt(delta_t))
     uu= u*u
     d = 1.0/u
     pUp = (R-d)/(u-d)
@@ -288,7 +321,7 @@ def option_price_put_american_proportional_dividends_binomial(S, K, r, sigma,
     
     R = exp(r*(time/no_steps))
     Rinv = 1.0/R
-    u = exp(sigma*sqrt(time/no_steps))
+    u = exp(sigma*math.sqrt(time/no_steps))
     uu= u*u
     d = 1.0/u
     pUp   = (R-d)/(u-d)
@@ -323,9 +356,138 @@ def option_price_put_american_proportional_dividends_binomial(S, K, r, sigma,
 
     return put_prices[0]
 
-while True:
-    spotVar = raw_input:('spotPrice :? >>')
-    strikeVar = raw_input('strikePrice :? >>')
-    dayVar = raw_input:('dayToExpiry :? >>')
-    rateVar = 0.0016
+def pullData(stock):
+    try: 
+        print "Currently pulling", stock
+        stockUrl = makeUrl(stock, start, end)
+        stockFile = []
+        try:
+            sourceCode = urllib2.urlopen(stockUrl).read()
+            splitSource = sourceCode.split('\n')
+            
+            for eachLine in splitSource:
+                splitLine = eachLine.split(',')
+                if len(splitLine) == 7:
+                    if 'values' not in eachLine:
+                        stockFile.append(eachLine)
+        except Exception, e:
+            print str(e), 'failed to organize pulled data'
+    except Exception, e:
+        print str(e), 'failed to pull stock historical data'
+        
+    try:
+        for line in stockFile:
+            s = line.split(',')
+
+            if s[0] == 'Date' or s[1] == 'Open' or s[2] == 'High' or s[3] == 'Low' or s[4] == 'Close' or s[5] == 'Volume' or s[6] == 'Adj Close':
+                pass
+            else:
+                date_obj = datetime.datetime.strptime(s[0], '%Y-%m-%d').date()
+                date.append(date_obj)
+                opent.append(s[1])
+                high.append(s[2])
+                low.append(s[3])
+                close.append(s[4])
+                low.append(s[5])
+                adjclose.append(s[6])
+    except Exception, e:
+        print str(e), 'error'
+    logreturn(adjclose)
+    variancecalc(logreturns)
+    annualvol(stdev(varianceaverage(variancecalcs)))
+
+def logreturn(adjclose):
+    i = 0
+    while i < len(adjclose) - 1:
+        x = math.log(float(adjclose[i])/float(adjclose[i+1]))
+        global logreturns
+        logreturns.append(x)
+        i += 1
+        print 'fuck'
+        
+def averagelog(logreturns):
+    sum = 0
+    counter = 0
+    i = 0
+    while i < len(logreturns) - 1:
+        y = logreturns[i]
+        sum += y
+        counter += 1
+        i += 1
+    x = sum / counter
+    return x
     
+def variancecalc(logreturns):
+    i = 0
+    avg = averagelog(logreturns)
+    while i < len(logreturns) - 1:
+        y = logreturns[i]
+        yprime = y - avg
+        global variancecalcs
+        variancecalcs.append(math.pow(yprime, 2))
+        i += 1
+
+def varianceaverage(variancecalc):
+    sum = 0
+    counter = 0
+    i = 0
+    while i < len(variancecalc) - 1:
+        y = variancecalc[i]
+        sum += y
+        counter += 1
+        i += 1
+    #counter should be n-1 to get an unbiased estimate
+    x = sum / (len(variancecalc) - 1)
+    #print "**********************************"
+    #print "VarAvrg:", x
+    return x
+
+
+def stdev(varianceAvrg):
+    return math.sqrt(varianceAvrg)
+
+
+def annualvol(stdev):
+    annualvol = math.sqrt(252) * stdev
+    global HVol 
+    HVol = annualvol
+    # #this should add historial vols by month in sequence
+    # return annualvol
+    
+def annualvol2(stdev):
+    return math.sqrt(daysToMaturityPrime) * stdev
+
+
+def makeUrl(stock, start, end):
+    a = start
+    b = end
+    dateUrl = '%s&a=%d&b=%d&c=%d&d=%d&e=%d&f=%d&g=d&ignore=.csv'% (stock, a.month-1, a.day, a.year, b.month-1, b.day, b.year)
+    return urlToVisit+dateUrl
+
+def get_quote(symbol):
+    ids = 'yl1'
+    values = _request(symbol, ids).split(',')
+    global q
+    global spot
+
+    q = float(values[0]) / 100 
+    spot = float(values[1])
+
+def _request(symbol, stat):
+    url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
+    req = Request(url)
+    resp = urlopen(req)
+    content = resp.read().decode().strip()
+    return content
+
+while True:
+    stock = raw_input('Stock to pull: >>')
+    get_quote(stock)
+    pullData(stock)
+    #march 20 2015 put option 
+    print spot
+    print HVol
+    print(option_price_put_american_binomial(spot, 125.00, 0.0016, HVol, 102, 25))
+    # spotVar = raw_input:('spotPrice :? >>')
+    # strikeVar = raw_input('strikePrice :? >>')
+    # dayVar = raw_input:('dayToExpiry :? >>')

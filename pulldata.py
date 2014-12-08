@@ -70,13 +70,6 @@ def googleQuote(ticker):
         lines = fix_json(urllib2.urlopen(url).read())
         chain.append(lines)
 
-    #prints out option chain data for each expiry date
-    #i = 1
-    #for lines in chain:
-    #    quote = json.loads(lines)
-    #    print i, ' : ', quote, '\n'
-    #    i += 1
-
     return chain
 
 def fix_json(k):
